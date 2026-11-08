@@ -2,123 +2,302 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vivek Trading Desk | Live Order Book & DOM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vivek Trading Desk | Institutional Order Flow Terminal</title>
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; }
-    body { background: #0b0e11; color: #fff; padding: 16px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-    
-    .brand-header {
-      width: 100%;
-      max-width: 440px;
-      margin-bottom: 12px;
+    body { background-color: #07090e; color: #d1d4dc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Top Strip */
+    .terminal-header {
+      background: #0f1218;
+      border-bottom: 1px solid #1e222d;
+      padding: 8px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 14px;
-      background: #181a20;
-      border-radius: 8px;
-      border: 1px solid #23272e;
+      font-size: 13px;
     }
-    .brand-title { font-size: 15px; font-weight: 700; color: #f0b90b; letter-spacing: 0.5px; }
-    .live-badge { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #0ecb81; font-weight: 600; }
-    .dot { width: 8px; height: 8px; background: #0ecb81; border-radius: 50%; box-shadow: 0 0 8px #0ecb81; }
+    .brand-wrap { display: flex; align-items: center; gap: 10px; }
+    .brand-tag { font-weight: 800; color: #f0b90b; letter-spacing: 0.5px; font-size: 14px; }
+    .status-pill { background: rgba(14, 203, 129, 0.12); color: #0ecb81; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+    .pulse-dot { width: 6px; height: 6px; background: #0ecb81; border-radius: 50%; box-shadow: 0 0 8px #0ecb81; }
 
-    .box { width: 100%; max-width: 440px; background: #12151c; border-radius: 8px; border: 1px solid #23272e; overflow: hidden; }
-    .market-bar { padding: 12px 14px; background: #15181f; display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; border-bottom: 1px solid #23272e; }
-    
-    .row { display: flex; height: 30px; align-items: center; position: relative; font-size: 12px; border-bottom: 1px solid #1a1e26; }
-    .bar { position: absolute; top: 0; bottom: 0; right: 0; opacity: 0.35; z-index: 1; }
-    .bar-ask { background: #f6465d; }
-    .bar-bid { background: #0ecb81; }
-    .big-seller-bar { background: #ff5722 !important; opacity: 0.85; }
+    .stats-strip { display: flex; gap: 18px; font-size: 12px; }
+    .stat-val { font-weight: bold; }
+    .c-green { color: #0ecb81; }
+    .c-red { color: #f6465d; }
 
-    .p-col { width: 95px; text-align: center; z-index: 2; color: #848e9c; font-weight: 600; }
-    .q-col { width: 90px; text-align: right; z-index: 2; padding-right: 14px; font-weight: bold; }
-    .t-col { flex: 1; z-index: 2; font-size: 11px; font-weight: bold; }
-    
-    .ltp-row { background: #1f2630; height: 36px; color: #ffeb3b; font-weight: bold; }
-    
-    .footer-bar {
-      width: 100%;
-      max-width: 440px;
-      margin-top: 14px;
-      text-align: center;
-      font-size: 12px;
-      color: #848e9c;
+    /* Sub Header Details (Screenshot Exact) */
+    .sub-bar {
+      padding: 6px 16px;
+      background: #0a0d13;
+      border-bottom: 1px solid #161a22;
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #787b86;
     }
-    .footer-bar a { color: #f0b90b; text-decoration: none; font-weight: 600; margin: 0 8px; }
+    .legend { display: flex; gap: 12px; align-items: center; }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .dot-legend { width: 7px; height: 7px; border-radius: 2px; }
+
+    /* Main Workspace */
+    .workspace {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 75px);
+      position: relative;
+    }
+
+    /* Left Chart */
+    #chartContainer {
+      flex: 1;
+      height: 100%;
+      background: #07090e;
+    }
+
+    /* Right DOM Ladder */
+    .dom-panel {
+      width: 480px;
+      max-width: 55%;
+      border-left: 1px solid #1e222d;
+      background: #0b0e14;
+      display: flex;
+      flex-direction: column;
+      overflow-y: hidden;
+      user-select: none;
+    }
+
+    .ladder-table {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .ladder-row {
+      display: flex;
+      align-items: center;
+      height: 25px;
+      position: relative;
+      font-size: 11px;
+      border-bottom: 1px solid #131720;
+    }
+
+    /* Depth Bars */
+    .depth-bar {
+      position: absolute;
+      top: 1px;
+      bottom: 1px;
+      right: 0;
+      opacity: 0.35;
+      z-index: 1;
+      transition: width 0.2s ease;
+    }
+    .depth-ask { background: #f6465d; }
+    .depth-bid { background: #0ecb81; }
+    .whale-seller-bar { background: #ff5722 !important; opacity: 0.85; }
+    .whale-buyer-bar { background: #00b0ff !important; opacity: 0.85; }
+
+    /* Columns */
+    .c-cell { z-index: 2; padding: 0 6px; white-space: nowrap; }
+    .col-vol-left { width: 55px; text-align: right; color: #787b86; font-size: 10px; }
+    .col-price { width: 70px; text-align: center; font-weight: bold; color: #9da3af; }
+    .col-qty { width: 60px; text-align: right; font-weight: 700; }
+    .col-tag { flex: 1; font-weight: 600; font-size: 10px; padding-left: 8px; }
+
+    /* Active Highlight States */
+    .whale-pill {
+      background: #ff5722;
+      color: #fff;
+      padding: 1px 6px;
+      border-radius: 2px;
+      font-size: 10px;
+      display: inline-block;
+      font-weight: 800;
+    }
+    .whale-pill-buy {
+      background: #0ecb81;
+      color: #000;
+      padding: 1px 6px;
+      border-radius: 2px;
+      font-size: 10px;
+      display: inline-block;
+      font-weight: 800;
+    }
+
+    .market-mid-row {
+      background: #181d26;
+      border-top: 1px solid #f0b90b55;
+      border-bottom: 1px solid #f0b90b55;
+      height: 30px;
+      color: #f0b90b;
+      font-weight: bold;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .workspace { flex-direction: column; }
+      #chartContainer { height: 42%; border-bottom: 1px solid #1e222d; }
+      .dom-panel { width: 100%; max-width: 100%; height: 58%; border-left: none; }
+    }
   </style>
 </head>
 <body>
 
-  <div class="brand-header">
-    <div class="brand-title">🏛️ VIVEK TRADING DESK</div>
-    <div class="live-badge"><div class="dot"></div> LIVE FEED</div>
+  <!-- Top Bar -->
+  <div class="terminal-header">
+    <div class="brand-wrap">
+      <div class="brand-tag">🏛️ VIVEK TRADING DESK</div>
+      <div class="status-pill"><div class="pulse-dot"></div> FEED LIVE</div>
+    </div>
+    <div class="stats-strip">
+      <span>NIFTY 25,600: <strong class="stat-val c-green" id="headerLtp">166.40</strong></span>
+      <span>Range: <strong class="stat-val">156.00 - 177.00</strong></span>
+    </div>
   </div>
 
-  <div class="box">
-    <div class="market-bar">
-      <span style="color: #eaecef">NIFTY (PER ₹1.00)</span>
-      <span style="color: #0ecb81">LTP: <span id="ltp">166.00</span></span>
+  <!-- Sub Header Legend (Screenshot Exact) -->
+  <div class="sub-bar">
+    <div class="legend">
+      <span>Live chart and order book (lots waiting, per ₹1.00)</span>
+      <div class="legend-item"><div class="dot-legend" style="background:#0ecb81"></div> buyers waiting</div>
+      <div class="legend-item"><div class="dot-legend" style="background:#f6465d"></div> sellers waiting</div>
+      <div class="legend-item"><div class="dot-legend" style="background:#f0b90b"></div> pulled</div>
     </div>
-    
-    <div id="asks"></div>
-    
-    <div class="row ltp-row">
-      <div class="p-col" id="midPrice">166.00</div>
-      <div class="q-col">◀ LTP</div>
-      <div class="t-col">Market Traded Price</div>
-    </div>
-    
-    <div id="bids"></div>
+    <div id="candleTimer" style="color: #f0b90b; font-weight: 600;">forming candle · 12s</div>
   </div>
 
-  <div class="footer-bar">
-    <span>Powered by Vivek Trading Desk</span>
-    <div style="margin-top: 6px;">
-      <a href="#">Telegram</a> • <a href="#">Instagram</a>
+  <!-- Workspace: Chart + DOM Ladder -->
+  <div class="workspace">
+    <div id="chartContainer"></div>
+
+    <div class="dom-panel">
+      <div class="ladder-table">
+        <div id="asksLadder"></div>
+
+        <div class="ladder-row market-mid-row">
+          <div class="c-cell col-vol-left">104 bgt</div>
+          <div class="c-cell col-price" id="ladderLtp" style="color: #f0b90b">166.40 ◀</div>
+          <div class="c-cell col-qty" style="color: #f0b90b">LTP</div>
+          <div class="c-cell col-tag">At Market Matching</div>
+        </div>
+
+        <div id="bidsLadder"></div>
+      </div>
     </div>
   </div>
 
   <script>
-    let price = 166.00;
-    function render() {
-      price += (Math.random() - 0.49) * 0.4;
-      document.getElementById('ltp').innerText = price.toFixed(2);
-      document.getElementById('midPrice').innerText = price.toFixed(2);
+    // 1. Initializing Lightweight Candlestick Chart Engine
+    const chart = LightweightCharts.createChart(document.getElementById('chartContainer'), {
+      layout: { background: { color: '#07090e' }, textColor: '#787b86' },
+      grid: { vertLines: { color: '#10141c' }, horzLines: { color: '#10141c' } },
+      timeScale: { timeVisible: true, secondsVisible: true, borderColor: '#1e222d' },
+      rightPriceScale: { borderColor: '#1e222d' },
+      crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
+    });
 
-      let asksHtml = '';
-      for (let i = 6; i >= 1; i--) {
-        let isBig = (i === 3);
-        let qty = isBig ? 1085 : Math.floor(Math.random() * 120 + 30);
-        let pct = Math.min((qty / 1200) * 100, 100);
-        asksHtml += `
-          <div class="row">
-            <div class="bar bar-ask ${isBig ? 'big-seller-bar' : ''}" style="width: ${pct}%"></div>
-            <div class="p-col">${(price + i).toFixed(2)}</div>
-            <div class="q-col" style="color: #f6465d">${qty}</div>
-            <div class="t-col" style="color: #ff9800">${isBig ? '⚠️ 1,085 Big Sellers' : ''}</div>
-          </div>`;
-      }
-      document.getElementById('asks').innerHTML = asksHtml;
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: '#0ecb81',
+      downColor: '#f6465d',
+      borderVisible: false,
+      wickUpColor: '#0ecb81',
+      wickDownColor: '#f6465d'
+    });
 
-      let bidsHtml = '';
-      for (let i = 1; i <= 6; i++) {
-        let isBig = (i === 4);
-        let qty = isBig ? 850 : Math.floor(Math.random() * 100 + 20);
-        let pct = Math.min((qty / 1200) * 100, 100);
-        bidsHtml += `
-          <div class="row">
-            <div class="bar bar-bid" style="width: ${pct}%"></div>
-            <div class="p-col">${(price - i).toFixed(2)}</div>
-            <div class="q-col" style="color: #0ecb81">${qty}</div>
-            <div class="t-col" style="color: #0ecb81">${isBig ? '⚡ Big Buyers' : ''}</div>
-          </div>`;
-      }
-      document.getElementById('bids').innerHTML = bidsHtml;
+    // Seed Initial Realistic Candles
+    let baseTime = Math.floor(Date.now() / 1000) - 300;
+    let basePrice = 164.50;
+    let candleData = [];
+
+    for (let i = 0; i < 60; i++) {
+      let open = basePrice;
+      let close = open + (Math.random() - 0.48) * 0.8;
+      let high = Math.max(open, close) + Math.random() * 0.4;
+      let low = Math.min(open, close) - Math.random() * 0.4;
+      candleData.push({ time: baseTime + i * 5, open, high, low, close });
+      basePrice = close;
     }
-    setInterval(render, 500);
+    candleSeries.setData(candleData);
+
+    let activeBar = candleData[candleData.length - 1];
+
+    // 2. DOM Ladder Simulation Engine
+    let ltp = basePrice;
+    let timerSeconds = 0;
+
+    function refreshTerminal() {
+      // Tick Movement
+      ltp += (Math.random() - 0.49) * 0.35;
+      ltp = Math.round(ltp * 20) / 20;
+
+      document.getElementById('headerLtp').innerText = ltp.toFixed(2);
+      document.getElementById('ladderLtp').innerText = ltp.toFixed(2) + ' ◀';
+
+      // Update Chart Live Bar
+      timerSeconds = (timerSeconds + 1) % 60;
+      document.getElementById('candleTimer').innerText = `forming candle · ${timerSeconds}s into minute`;
+
+      if (timerSeconds === 0) {
+        activeBar = { time: Math.floor(Date.now() / 1000), open: ltp, high: ltp, low: ltp, close: ltp };
+      } else {
+        activeBar.high = Math.max(activeBar.high, ltp);
+        activeBar.low = Math.min(activeBar.low, ltp);
+        activeBar.close = ltp;
+      }
+      candleSeries.update(activeBar);
+
+      // Render Asks Ladder (Sellers)
+      let asksHtml = '';
+      for (let i = 8; i >= 1; i--) {
+        let p = (ltp + i * 1.0).toFixed(2);
+        let isBig = (i === 3);
+        let qty = isBig ? 1085 : Math.floor(Math.random() * 110 + 40);
+        let width = Math.min((qty / 1400) * 100, 100);
+        let leftVol = Math.floor(Math.random() * 90 + 20);
+
+        asksHtml += `
+          <div class="ladder-row">
+            <div class="depth-bar depth-ask ${isBig ? 'whale-seller-bar' : ''}" style="width: ${width}%"></div>
+            <div class="c-cell col-vol-left">${leftVol}</div>
+            <div class="c-cell col-price">${p}</div>
+            <div class="c-cell col-qty" style="color: #f6465d">${qty}</div>
+            <div class="c-cell col-tag">${isBig ? '<span class="whale-pill">1,085 Big Sellers</span>' : ''}</div>
+          </div>`;
+      }
+      document.getElementById('asksLadder').innerHTML = asksHtml;
+
+      // Render Bids Ladder (Buyers)
+      let bidsHtml = '';
+      for (let i = 1; i <= 8; i++) {
+        let p = (ltp - i * 1.0).toFixed(2);
+        let isBig = (i === 5);
+        let qty = isBig ? 850 : Math.floor(Math.random() * 95 + 30);
+        let width = Math.min((qty / 1400) * 100, 100);
+        let leftVol = Math.floor(Math.random() * 110 + 20);
+
+        bidsHtml += `
+          <div class="ladder-row">
+            <div class="depth-bar depth-bid ${isBig ? 'whale-buyer-bar' : ''}" style="width: ${width}%"></div>
+            <div class="c-cell col-vol-left">${leftVol} bought</div>
+            <div class="c-cell col-price">${p}</div>
+            <div class="c-cell col-qty" style="color: #0ecb81">${qty}</div>
+            <div class="c-cell col-tag">${isBig ? '<span class="whale-pill-buy">⚡ Big Buyers Detected</span>' : ''}</div>
+          </div>`;
+      }
+      document.getElementById('bidsLadder').innerHTML = bidsHtml;
+    }
+
+    // High Speed 400ms Market Stream
+    setInterval(refreshTerminal, 400);
+
+    // Auto resize chart container
+    window.addEventListener('resize', () => {
+      chart.resize(document.getElementById('chartContainer').clientWidth, document.getElementById('chartContainer').clientHeight);
+    });
   </script>
 </body>
 </html>
