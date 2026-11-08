@@ -3,68 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Vivek Trading Desk | Live Order Book & Chart</title>
+  <title>Vivek Trading Desk</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; }
-    body { background: #000000; color: #d1d4dc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    body { background: #000; color: #d1d4dc; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-    /* Top Reel Style Header */
-    .header-top {
-      padding: 10px 14px 4px 14px;
+    /* Top Strip */
+    .top-bar {
+      background: #000;
+      border-bottom: 1px solid #1a1e28;
+      padding: 6px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #000;
-      border-bottom: 1px solid #14171d;
+      font-size: 11px;
     }
-    .brand-title { color: #f0b90b; font-weight: 800; font-size: 13px; display: flex; align-items: center; gap: 6px; }
-    .live-dot { width: 7px; height: 7px; background: #0ecb81; border-radius: 50%; box-shadow: 0 0 6px #0ecb81; }
-    .range-box { font-size: 11px; color: #848e9c; }
-    .range-val { color: #f6465d; font-weight: bold; }
+    .brand { font-weight: 800; color: #f0b90b; font-size: 12px; display: flex; align-items: center; gap: 5px; }
+    .live-dot { width: 6px; height: 6px; background: #0ecb81; border-radius: 50%; box-shadow: 0 0 6px #0ecb81; }
 
-    /* Subtitle Banner (Screenshot Exact) */
-    .sub-banner {
-      padding: 6px 14px;
+    /* Sub Banner */
+    .sub-bar {
+      background: #050608;
+      border-bottom: 1px solid #141822;
+      padding: 4px 10px;
+      display: flex;
+      justify-content: space-between;
       font-size: 10px;
       color: #787b86;
-      background: #050608;
-      border-bottom: 1px solid #14171d;
     }
-    .sub-top-line { display: flex; justify-content: space-between; margin-bottom: 3px; font-weight: 600; color: #a0a5b1; }
-    .legend-row { display: flex; gap: 10px; font-size: 9px; }
-    .leg { display: flex; align-items: center; gap: 4px; }
-    .sq { width: 6px; height: 6px; border-radius: 1px; }
 
-    /* Main Container: Left Chart + Right DOM */
-    .split-view {
+    /* Side-by-Side Area */
+    .main-workspace {
       display: flex;
       flex: 1;
-      height: calc(100vh - 80px);
+      height: calc(100vh - 65px);
       width: 100%;
-      background: #040507;
     }
 
-    /* Left Side: Candlestick Canvas */
-    .chart-side {
+    /* Left Chart */
+    .chart-panel {
       width: 44%;
       height: 100%;
-      position: relative;
       border-right: 1px solid #151922;
+      background: #000;
     }
-    #candleCanvas {
+    #chart {
       width: 100%;
       height: 100%;
       display: block;
     }
 
-    /* Right Side: Order Flow Ladder */
-    .ladder-side {
+    /* Right Ladder */
+    .dom-panel {
       width: 56%;
       height: 100%;
       display: flex;
       flex-direction: column;
       justify-content: space-evenly;
-      background: #06080b;
+      background: #05070a;
       padding: 2px 0;
     }
 
@@ -77,7 +73,6 @@
       border-bottom: 1px solid #0d1017;
     }
 
-    /* Depth Bar Visuals */
     .bar {
       position: absolute;
       top: 1px;
@@ -96,19 +91,10 @@
     .c-q { width: 36px; text-align: right; font-weight: 700; }
     .c-tag { flex: 1; font-size: 9px; font-weight: 700; overflow: hidden; padding-left: 4px; }
 
-    .whale-tag {
-      background: #ff5722;
-      color: #fff;
-      padding: 1px 4px;
-      border-radius: 2px;
-      font-size: 8px;
-    }
-    .buyer-tag {
-      color: #00e676;
-      font-size: 9px;
-    }
+    .whale-pill { background: #ff5722; color: #fff; padding: 1px 4px; border-radius: 2px; font-size: 8px; }
+    .buyer-pill { color: #00e676; font-size: 9px; }
 
-    .current-line {
+    .mid-row {
       background: #141923;
       border-top: 1px solid #f0b90b88;
       border-bottom: 1px solid #f0b90b88;
@@ -120,36 +106,26 @@
 </head>
 <body>
 
-  <!-- Top Strip -->
-  <div class="header-top">
-    <div class="brand-title"><div class="live-dot"></div> VIVEK TRADING DESK</div>
-    <div class="range-box">169.00-170.00 <span class="range-val">₹2.40 above</span></div>
+  <div class="top-bar">
+    <div class="brand"><div class="live-dot"></div> VIVEK TRADING DESK</div>
+    <div>NIFTY: <strong style="color: #0ecb81" id="topLtp">166.40</strong></div>
   </div>
 
-  <!-- Legend Bar -->
-  <div class="sub-banner">
-    <div class="sub-top-line">
-      <span>Live chart and order book (lots waiting, per ₹1.00)</span>
-      <span id="timerTxt" style="color:#f0b90b">3s into minute</span>
-    </div>
-    <div class="legend-row">
-      <div class="leg"><div class="sq" style="background:#0ecb81"></div> buyers waiting / bought</div>
-      <div class="leg"><div class="sq" style="background:#f6465d"></div> sellers waiting / sold</div>
-      <div class="leg"><div class="sq" style="background:#ff9800"></div> pulled (cancelled)</div>
-    </div>
+  <div class="sub-bar">
+    <span>Order Flow Footprint</span>
+    <span id="timerTxt" style="color:#f0b90b">candle · 4s</span>
   </div>
 
-  <!-- Workspace: Left Chart + Right DOM Ladder -->
-  <div class="split-view">
-    <div class="chart-side">
-      <canvas id="candleCanvas"></canvas>
+  <div class="main-workspace">
+    <div class="chart-panel">
+      <canvas id="chart"></canvas>
     </div>
 
-    <div class="ladder-side">
+    <div class="dom-panel">
       <div id="asksList"></div>
 
-      <div class="row current-line">
-        <div class="cell c-p" id="centerPrice" style="color:#f0b90b">166.00 ◀</div>
+      <div class="row mid-row">
+        <div class="cell c-p" id="centerPrice" style="color:#f0b90b">166.40 ◀</div>
         <div class="cell c-q" style="color:#f0b90b">LTP</div>
         <div class="cell c-tag" style="color:#0ecb81">104 bought</div>
       </div>
@@ -159,7 +135,7 @@
   </div>
 
   <script>
-    const canvas = document.getElementById('candleCanvas');
+    const canvas = document.getElementById('chart');
     const ctx = canvas.getContext('2d');
 
     function resize() {
@@ -169,32 +145,28 @@
     resize();
     window.addEventListener('resize', resize);
 
-    // Initial Candles Array
     let candles = [];
-    let curPrice = 166.00;
-    let seedPrice = 163.50;
+    let curPrice = 166.40;
+    let seed = 163.50;
 
     for (let i = 0; i < 14; i++) {
-      let o = seedPrice;
+      let o = seed;
       let c = o + (Math.random() - 0.46) * 1.4;
       let h = Math.max(o, c) + Math.random() * 0.4;
       let l = Math.min(o, c) - Math.random() * 0.4;
       candles.push({ o, c, h, l });
-      seedPrice = c;
+      seed = c;
     }
-    curPrice = seedPrice;
+    curPrice = seed;
 
-    // Draw Candlesticks
-    function renderChart() {
+    function drawChart() {
       const w = canvas.width;
       const h = canvas.height;
       ctx.clearRect(0, 0, w, h);
 
-      let allLows = candles.map(c => c.l);
-      let allHighs = candles.map(c => c.h);
-      let min = Math.min(...allLows) - 0.5;
-      let max = Math.max(...allHighs) + 0.5;
-      let range = max - min;
+      let min = Math.min(...candles.map(c => c.l)) - 0.5;
+      let max = Math.max(...candles.map(c => c.h)) + 0.5;
+      let range = max - min || 1;
 
       const cWidth = (w / (candles.length + 1)) - 4;
 
@@ -209,19 +181,16 @@
         ctx.strokeStyle = isUp ? '#0ecb81' : '#f6465d';
         ctx.fillStyle = isUp ? '#0ecb81' : '#f6465d';
 
-        // Wick
         ctx.beginPath();
         ctx.moveTo(x + cWidth / 2, yHigh);
         ctx.lineTo(x + cWidth / 2, yLow);
         ctx.stroke();
 
-        // Body
         let top = Math.min(yOpen, yClose);
         let bHeight = Math.max(Math.abs(yClose - yOpen), 2);
         ctx.fillRect(x, top, cWidth, bHeight);
       });
 
-      // Horizontal Current Price Dotted Line
       let yLtp = h - ((curPrice - min) / range) * h;
       ctx.strokeStyle = '#f0b90b88';
       ctx.setLineDash([2, 3]);
@@ -232,18 +201,17 @@
       ctx.setLineDash([]);
     }
 
-    // Ladder Tick Loop
-    let sec = 3;
-    function renderLadder() {
+    let sec = 0;
+    function loop() {
       curPrice += (Math.random() - 0.49) * 0.25;
       curPrice = Math.round(curPrice * 20) / 20;
 
+      document.getElementById('topLtp').innerText = curPrice.toFixed(2);
       document.getElementById('centerPrice').innerText = curPrice.toFixed(2) + ' ◀';
 
       sec = (sec + 1) % 60;
-      document.getElementById('timerTxt').innerText = `forming candle · ${sec}s into minute`;
+      document.getElementById('timerTxt').innerText = `candle · ${sec}s`;
 
-      // Update Last Candle
       let active = candles[candles.length - 1];
       active.c = curPrice;
       active.h = Math.max(active.h, curPrice);
@@ -253,9 +221,8 @@
         candles.shift();
         candles.push({ o: curPrice, c: curPrice, h: curPrice, l: curPrice });
       }
-      renderChart();
+      drawChart();
 
-      // Asks (Sellers)
       let asksHtml = '';
       for (let i = 7; i >= 1; i--) {
         let p = (curPrice + i * 1.0).toFixed(2);
@@ -268,12 +235,11 @@
             <div class="bar bar-ask ${isWhale ? 'whale-seller' : ''}" style="width: ${width}%"></div>
             <div class="cell c-p">${p}</div>
             <div class="cell c-q" style="color:#f6465d">${qty}</div>
-            <div class="cell c-tag">${isWhale ? '<span class="whale-tag">1,085 Big Sellers</span>' : ''}</div>
+            <div class="cell c-tag">${isWhale ? '<span class="whale-pill">1,085 Big</span>' : ''}</div>
           </div>`;
       }
       document.getElementById('asksList').innerHTML = asksHtml;
 
-      // Bids (Buyers)
       let bidsHtml = '';
       for (let i = 1; i <= 7; i++) {
         let p = (curPrice - i * 1.0).toFixed(2);
@@ -287,13 +253,13 @@
             <div class="bar bar-bid ${isWhale ? 'whale-buyer' : ''}" style="width: ${width}%"></div>
             <div class="cell c-p">${p}</div>
             <div class="cell c-q" style="color:#0ecb81">${qty}</div>
-            <div class="cell c-tag">${isWhale ? '<span class="buyer-tag">⚡ Big Buyers</span>' : `<span style="color:#848e9c">${bought} bought</span>`}</div>
+            <div class="cell c-tag">${isWhale ? '<span class="buyer-pill">⚡ Big Buyers</span>' : `<span style="color:#848e9c">${bought} bgt</span>`}</div>
           </div>`;
       }
       document.getElementById('bidsList').innerHTML = bidsHtml;
     }
 
-    setInterval(renderLadder, 450);
+    setInterval(loop, 450);
   </script>
 </body>
 </html>
